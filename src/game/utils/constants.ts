@@ -153,17 +153,28 @@ export type SoundName = (typeof SOUND_NAMES)[number]
 
 // ---- Assets ----
 
-/** Snack images are drawn as a square of side 2 × radius × this. */
-export const IMAGE_SCALE = 1.0
+/** A snack image's longest side is drawn at 2 × radius × this (aspect ratio is kept). */
+export const IMAGE_SCALE = 1.1
+
+/** Images are cropped to their visible pixels and downscaled to at most this many px. */
+export const SPRITE_MAX_PX = 320
+
+/**
+ * Optional background image: public/assets/background/background.<ext>,
+ * tried in this order. Falls back to the drawn gradient.
+ */
+export const BACKGROUND_EXTENSIONS = ['jpg', 'png', 'webp'] as const
+
+/** Dark overlay on the background image (0–1) so snacks stand out. */
+export const BACKGROUND_DIM = 0.3
 
 // ---- Entities ----
 
 export const SNACK_TYPES = [
   'pazhampori',
   'parippuvada',
-  'unniyappam',
   'achappam',
-  'uzhunnuvada',
+  'arimurukku'
 ] as const
 export type SnackType = (typeof SNACK_TYPES)[number]
 
@@ -179,8 +190,7 @@ interface Look {
 export const SNACK_LOOKS: Record<SnackType | 'undampori', Look> = {
   pazhampori: { radius: 44, fill: '#e8a33d', accent: '#b8701c', inside: '#f7e08a' },
   parippuvada: { radius: 40, fill: '#c98a3c', accent: '#8a5a22', inside: '#e2b56a' },
-  unniyappam: { radius: 34, fill: '#7a3f1d', accent: '#4e2410', inside: '#c98a4a' },
   achappam: { radius: 42, fill: '#f0c96a', accent: '#c99a3a', inside: '#fff1c4' },
-  uzhunnuvada: { radius: 42, fill: '#d99a4e', accent: '#9c6428', inside: '#f3e3c3' },
+  arimurukku: { radius: 42, fill: '#d99a4e', accent: '#9c6428', inside: '#f3e3c3' },
   undampori: { radius: 42, fill: '#3a2418', accent: '#e23b2e', inside: '#f2d9a0' },
 }

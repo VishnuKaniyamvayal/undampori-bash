@@ -29,6 +29,8 @@ Everything is optional — missing files fall back to drawn shapes / synthesised
 - `public/assets/snacks/achappam.png`
 - `public/assets/snacks/uzhunnuvada.png`
 - `public/assets/undampori/undampori.png` — the "bomb"
+- `public/assets/background/background.jpg` (or `.png` / `.webp`) — full-screen background,
+  scaled to cover the screen; landscape ~1920×1080 works well
 
 **Sounds** (MP3, short):
 

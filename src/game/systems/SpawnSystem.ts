@@ -22,6 +22,7 @@ import {
   WAVE_SIZE_MIN,
   WAVE_STAGGER_MAX,
   WAVE_STAGGER_MIN,
+  type SnackType,
 } from '../utils/constants'
 import { clamp, lerp, pick, randInt, randRange, type Rng } from '../utils/math'
 
@@ -42,9 +43,15 @@ export class SpawnSystem {
   private timeUntilWave = FIRST_WAVE_DELAY
   private pending: PendingLaunch[] = []
   private nextId = 1
+  private snackTypes: readonly SnackType[] = SNACK_TYPES
 
   constructor(rng: Rng = Math.random) {
     this.rng = rng
+  }
+
+  /** Restrict which snacks launch (e.g. only those with artwork). Empty = all. */
+  setSnackTypes(types: readonly SnackType[]): void {
+    this.snackTypes = types.length > 0 ? types : SNACK_TYPES
   }
 
   reset(): void {
@@ -90,7 +97,7 @@ export class SpawnSystem {
   private createLaunch(kind: EntityKind, viewport: Viewport, gravity: number): Snack {
     const rng = this.rng
     const { width, height } = viewport
-    const type = kind === 'undampori' ? 'undampori' : pick(SNACK_TYPES, rng)
+    const type = kind === 'undampori' ? 'undampori' : pick(this.snackTypes, rng)
     const radius = SNACK_LOOKS[type].radius
 
     const x = width * randRange(LAUNCH_X_MIN, LAUNCH_X_MAX, rng)

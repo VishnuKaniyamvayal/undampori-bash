@@ -1,4 +1,4 @@
-import { loadImages } from '../assets/AssetLoader'
+import { loadBackground, loadImages } from '../assets/AssetLoader'
 import { Renderer } from '../rendering/Renderer'
 import { AudioSystem } from '../systems/AudioSystem'
 import { startFlash, startShake, updateEffects } from '../systems/EffectsSystem'
@@ -22,6 +22,7 @@ import {
   SHAKE_STRENGTH,
   SLICE_PADDING,
   SNACK_LOOKS,
+  SNACK_TYPES,
   WORLD_SHORT_SIDE,
 } from '../utils/constants'
 import { loadHighScore, loadMuted, saveHighScore, saveMuted } from '../utils/storage'
@@ -87,9 +88,13 @@ export class Game {
     this.loop.start()
 
     // Preload art before play; missing images fall back to drawn shapes.
-    void loadImages().then((images) => {
+    void Promise.all([loadImages(), loadBackground()]).then(([images, background]) => {
       if (this.destroyed) return
       this.renderer.setImages(images)
+      this.renderer.setBackgroundImage(background)
+      // Don't mix real art with placeholder shapes: if any snack has an image,
+      // only launch snacks that have one.
+      this.spawner.setSnackTypes(SNACK_TYPES.filter((type) => images[type]))
       this.loading = false
       this.publish()
     })

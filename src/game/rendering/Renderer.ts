@@ -1,8 +1,14 @@
-import type { ImageMap } from '../assets/AssetLoader'
+import { fitContain, type ImageMap, type Sprite } from '../assets/AssetLoader'
 import type { GameState, Popup, Viewport } from '../core/types'
 import type { Particle, Piece, Snack } from '../entities/types'
 import type { TrailStroke } from '../systems/InputSystem'
-import { IMAGE_SCALE, POPUP_LIFETIME, SHOW_DEBUG_INFO, SNACK_LOOKS } from '../utils/constants'
+import {
+  BACKGROUND_DIM,
+  IMAGE_SCALE,
+  POPUP_LIFETIME,
+  SHOW_DEBUG_INFO,
+  SNACK_LOOKS,
+} from '../utils/constants'
 import { drawTrails } from './TrailRenderer'
 
 /** Margin drawn around the visible area so screen shake never reveals an edge. */
@@ -19,6 +25,10 @@ export interface RenderInput {
 export class Renderer {
   private readonly ctx: CanvasRenderingContext2D
   private background: CanvasGradient | null = null
+  private backgroundImage: HTMLImageElement | null = null
+  /** Background image pre-rendered (cover-fit + dim) at screen resolution; rebuilt on resize. */
+  private backgroundCache: HTMLCanvasElement | null = null
+  private lastViewport: Viewport | null = null
   private images: ImageMap = {}
   private fps = 60
 
@@ -30,8 +40,15 @@ export class Renderer {
     this.images = images
   }
 
+  setBackgroundImage(image: HTMLImageElement | null): void {
+    this.backgroundImage = image
+    if (this.lastViewport) this.resize(this.lastViewport)
+  }
+
   /** Rebuild size-dependent cached resources. */
   resize(viewport: Viewport): void {
+    this.lastViewport = viewport
+    this.backgroundCache = this.backgroundImage ? this.buildBackground(this.backgroundImage, viewport) : null
     const { width, height } = viewport
     const g = this.ctx.createRadialGradient(
       width / 2,
@@ -62,8 +79,14 @@ export class Renderer {
     }
     ctx.setTransform(k, 0, 0, k, ox * k, oy * k)
 
-    ctx.fillStyle = this.background ?? '#1a0f0a'
-    ctx.fillRect(-SHAKE_MARGIN, -SHAKE_MARGIN, width + SHAKE_MARGIN * 2, height + SHAKE_MARGIN * 2)
+    const bgW = width + SHAKE_MARGIN * 2
+    const bgH = height + SHAKE_MARGIN * 2
+    if (this.backgroundCache) {
+      ctx.drawImage(this.backgroundCache, -SHAKE_MARGIN, -SHAKE_MARGIN, bgW, bgH)
+    } else {
+      ctx.fillStyle = this.background ?? '#1a0f0a'
+      ctx.fillRect(-SHAKE_MARGIN, -SHAKE_MARGIN, bgW, bgH)
+    }
 
     for (const piece of state.pieces) this.drawPiece(piece)
     for (const snack of state.snacks) this.drawSnack(snack, input.now)
@@ -78,6 +101,31 @@ export class Renderer {
       ctx.fillRect(0, 0, width, height)
     }
     if (SHOW_DEBUG_INFO) this.drawDebug(state, input.particles, height, frameDelta)
+  }
+
+  /**
+   * Draw the image "cover"-fitted (fills the screen, keeps aspect ratio, crops overflow)
+   * plus the dim overlay, once, into a screen-sized canvas. Drawing that each frame is cheap.
+   */
+  private buildBackground(image: HTMLImageElement, viewport: Viewport): HTMLCanvasElement | null {
+    const k = viewport.scale * viewport.dpr
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round((viewport.width + SHAKE_MARGIN * 2) * k))
+    canvas.height = Math.max(1, Math.round((viewport.height + SHAKE_MARGIN * 2) * k))
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return null
+
+    const cover = Math.max(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight)
+    const w = image.naturalWidth * cover
+    const h = image.naturalHeight * cover
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(image, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h)
+
+    if (BACKGROUND_DIM > 0) {
+      ctx.fillStyle = `rgba(10, 5, 2, ${BACKGROUND_DIM})`
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+    }
+    return canvas
   }
 
   private drawSnack(snack: Snack, now: number): void {
@@ -103,8 +151,7 @@ export class Renderer {
     ctx.rotate(snack.rotation)
 
     if (image) {
-      const s = r * IMAGE_SCALE
-      ctx.drawImage(image, -s, -s, s * 2, s * 2)
+      this.drawSprite(image, r)
     } else {
       // Placeholder: coloured disc with a stripe so rotation is visible.
       ctx.beginPath()
@@ -131,43 +178,53 @@ export class Renderer {
     ctx.restore()
   }
 
-  /** A half: the snack image (or fallback disc) clipped to a half-disc, with a cut face. */
+  /** Draw a sprite centred on the origin, longest side = 2r × IMAGE_SCALE, aspect ratio kept. */
+  private drawSprite(sprite: Sprite, r: number): void {
+    const size = fitContain(sprite.width, sprite.height, r * 2 * IMAGE_SCALE)
+    this.ctx.drawImage(sprite.source, -size.width / 2, -size.height / 2, size.width, size.height)
+  }
+
+  /**
+   * A half of a sliced snack. With art: the whole sprite clipped by a straight cut
+   * (a half-plane, so no corners are lost and no seam line is drawn).
+   * Without art: a half-disc with a lighter cut face.
+   */
   private drawPiece(piece: Piece): void {
     const ctx = this.ctx
-    const look = SNACK_LOOKS[piece.type]
     const r = piece.radius
-    const start = piece.side === 0 ? 0 : Math.PI
     const image = this.images[piece.type]
 
     ctx.save()
     ctx.translate(piece.x, piece.y)
     ctx.rotate(piece.rotation)
 
-    ctx.beginPath()
-    ctx.arc(0, 0, image ? r * IMAGE_SCALE : r, start, start + Math.PI)
-    ctx.closePath()
-
     if (image) {
-      ctx.save()
+      // Local +y is side 0's half; R comfortably covers the sprite's corners.
+      const R = r * IMAGE_SCALE * 1.5
+      ctx.beginPath()
+      ctx.rect(-R, piece.side === 0 ? 0 : -R, R * 2, R)
       ctx.clip()
       ctx.rotate(piece.imageRotation)
-      const s = r * IMAGE_SCALE
-      ctx.drawImage(image, -s, -s, s * 2, s * 2)
-      ctx.restore()
+      this.drawSprite(image, r)
     } else {
+      const look = SNACK_LOOKS[piece.type]
+      const start = piece.side === 0 ? 0 : Math.PI
+      ctx.beginPath()
+      ctx.arc(0, 0, r, start, start + Math.PI)
+      ctx.closePath()
       ctx.fillStyle = look.fill
       ctx.fill()
       ctx.lineWidth = 3
       ctx.strokeStyle = look.accent
       ctx.stroke()
-    }
 
-    ctx.beginPath()
-    ctx.moveTo(-r + 3, 0)
-    ctx.lineTo(r - 3, 0)
-    ctx.lineWidth = image ? 3 : 5
-    ctx.strokeStyle = look.inside
-    ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(-r + 3, 0)
+      ctx.lineTo(r - 3, 0)
+      ctx.lineWidth = 5
+      ctx.strokeStyle = look.inside
+      ctx.stroke()
+    }
 
     ctx.restore()
   }
