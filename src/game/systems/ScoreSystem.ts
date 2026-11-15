@@ -80,7 +80,13 @@ export function endRound(state: GameState, reason: GameOverReason): void {
  * Deactivate snacks and pieces that fell below `bottom`.
  * Each unsliced snack costs exactly one life (guarded by its `missed` flag).
  */
-export function processOffscreen(state: GameState, bottom: number, worldWidth: number): void {
+export function processOffscreen(
+  state: GameState,
+  bottom: number,
+  worldWidth: number,
+  /** Where the miss ✕ appears (e.g. just above a foreground strip). */
+  missPopupY = bottom - 40,
+): void {
   for (const snack of state.snacks) {
     if (!snack.active || snack.vy <= 0 || snack.y - snack.radius <= bottom) continue
     snack.active = false
@@ -88,7 +94,7 @@ export function processOffscreen(state: GameState, bottom: number, worldWidth: n
     snack.missed = true
     if (state.status !== 'playing') continue
     registerMiss(state)
-    addPopup(state, 'miss', '✕', clamp(snack.x, 40, worldWidth - 40), bottom - 40)
+    addPopup(state, 'miss', '✕', clamp(snack.x, 40, worldWidth - 40), missPopupY)
   }
   for (const piece of state.pieces) {
     if (piece.vy > 0 && piece.y - piece.radius > bottom) piece.active = false

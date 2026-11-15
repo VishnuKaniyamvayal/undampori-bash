@@ -168,6 +168,15 @@ export const BACKGROUND_EXTENSIONS = ['jpg', 'png', 'webp'] as const
 /** Dark overlay on the background image (0–1) so snacks stand out. */
 export const BACKGROUND_DIM = 0.3
 
+/**
+ * Optional foreground strip: public/assets/foreground/foreground.<ext>, tried in this order.
+ * Drawn full-width, anchored to the bottom, in front of the snacks.
+ */
+export const FOREGROUND_EXTENSIONS = ['png', 'webp', 'jpg'] as const
+
+/** Max share of the screen height the foreground may cover; taller images overflow off the bottom. */
+export const FOREGROUND_MAX_HEIGHT = 1
+
 // ---- Entities ----
 
 export const SNACK_TYPES = [

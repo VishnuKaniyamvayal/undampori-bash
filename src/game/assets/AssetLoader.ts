@@ -1,4 +1,10 @@
-import { BACKGROUND_EXTENSIONS, SNACK_TYPES, SPRITE_MAX_PX, type SnackType } from '../utils/constants'
+import {
+  BACKGROUND_EXTENSIONS,
+  FOREGROUND_EXTENSIONS,
+  SNACK_TYPES,
+  SPRITE_MAX_PX,
+  type SnackType,
+} from '../utils/constants'
 
 export type ImageKey = SnackType | 'undampori'
 
@@ -162,9 +168,38 @@ export async function loadImages(): Promise<ImageMap> {
 }
 
 /** Optional full-screen background: the first of background.jpg / .png / .webp that exists. */
-export async function loadBackground(): Promise<HTMLImageElement | null> {
-  for (const ext of BACKGROUND_EXTENSIONS) {
-    const img = await loadImage(`${BASE}assets/background/background.${ext}`)
+export function loadBackground(): Promise<HTMLImageElement | null> {
+  return loadFirstExisting('background', BACKGROUND_EXTENSIONS)
+}
+
+/** Optional bottom strip drawn in front of the snacks: the first foreground.png / .webp / .jpg. */
+export async function loadForeground(): Promise<Sprite | null> {
+  const img = await loadFirstExisting('foreground', FOREGROUND_EXTENSIONS)
+  return img ? trimVertically(img) : null
+}
+
+/**
+ * Remove fully transparent rows above and below the artwork (full width is kept),
+ * so a full-screen PNG with art only at the bottom becomes a proper strip.
+ */
+function trimVertically(img: HTMLImageElement): Sprite {
+  const bounds = findVisibleBounds(img)
+  const top = Math.floor(bounds.y)
+  const height = Math.min(img.naturalHeight - top, Math.ceil(bounds.height))
+  const canvas = makeCanvas(img.naturalWidth, height)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return { source: img, width: img.naturalWidth, height: img.naturalHeight }
+  ctx.drawImage(img, 0, top, img.naturalWidth, height, 0, 0, canvas.width, canvas.height)
+  return { source: canvas, width: canvas.width, height: canvas.height }
+}
+
+/** Load public/assets/<name>/<name>.<ext> for the first extension that exists. */
+async function loadFirstExisting(
+  name: string,
+  extensions: readonly string[],
+): Promise<HTMLImageElement | null> {
+  for (const ext of extensions) {
+    const img = await loadImage(`${BASE}assets/${name}/${name}.${ext}`)
     if (img) return img
   }
   return null

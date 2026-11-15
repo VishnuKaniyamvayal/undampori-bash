@@ -31,6 +31,9 @@ Everything is optional — missing files fall back to drawn shapes / synthesised
 - `public/assets/undampori/undampori.png` — the "bomb"
 - `public/assets/background/background.jpg` (or `.png` / `.webp`) — full-screen background,
   scaled to cover the screen; landscape ~1920×1080 works well
+- `public/assets/foreground/foreground.png` (or `.webp` / `.jpg`) — strip along the bottom,
+  drawn in front of the snacks (e.g. a counter); full width, max 30% of screen height.
+  Use a transparent PNG ~1920 px wide for a shaped top edge
 
 **Sounds** (MP3, short):
 

@@ -4,6 +4,7 @@ import type { Particle, Piece, Snack } from '../entities/types'
 import type { TrailStroke } from '../systems/InputSystem'
 import {
   BACKGROUND_DIM,
+  FOREGROUND_MAX_HEIGHT,
   IMAGE_SCALE,
   POPUP_LIFETIME,
   SHOW_DEBUG_INFO,
@@ -29,6 +30,13 @@ export class Renderer {
   /** Background image pre-rendered (cover-fit + dim) at screen resolution; rebuilt on resize. */
   private backgroundCache: HTMLCanvasElement | null = null
   private lastViewport: Viewport | null = null
+  private foregroundImage: Sprite | null = null
+  /** Visible part of the foreground strip, pre-rendered at screen resolution. */
+  private foregroundCache: HTMLCanvasElement | null = null
+  /** World-space rect the foreground cache is drawn into. */
+  private foregroundRect = { x: 0, y: 0, width: 0, height: 0 }
+  /** World y of the foreground strip's top edge (screen bottom if there is none). */
+  foregroundTop = 0
   private images: ImageMap = {}
   private fps = 60
 
@@ -45,10 +53,18 @@ export class Renderer {
     if (this.lastViewport) this.resize(this.lastViewport)
   }
 
+  setForegroundImage(image: Sprite | null): void {
+    this.foregroundImage = image
+    if (this.lastViewport) this.resize(this.lastViewport)
+  }
+
   /** Rebuild size-dependent cached resources. */
   resize(viewport: Viewport): void {
     this.lastViewport = viewport
     this.backgroundCache = this.backgroundImage ? this.buildBackground(this.backgroundImage, viewport) : null
+    this.foregroundCache = null
+    this.foregroundTop = viewport.height
+    if (this.foregroundImage) this.buildForeground(this.foregroundImage, viewport)
     const { width, height } = viewport
     const g = this.ctx.createRadialGradient(
       width / 2,
@@ -91,6 +107,10 @@ export class Renderer {
     for (const piece of state.pieces) this.drawPiece(piece)
     for (const snack of state.snacks) this.drawSnack(snack, input.now)
     this.drawParticles(input.particles)
+    if (this.foregroundCache) {
+      const r = this.foregroundRect
+      ctx.drawImage(this.foregroundCache, r.x, r.y, r.width, r.height)
+    }
     for (const popup of state.popups) this.drawPopup(popup)
     drawTrails(ctx, input.trails, input.now)
 
@@ -126,6 +146,35 @@ export class Renderer {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
     return canvas
+  }
+
+  /**
+   * Fit the foreground to the full width (aspect kept), anchor it to the bottom and cap its
+   * visible height at FOREGROUND_MAX_HEIGHT; extra height runs off-screen below.
+   * Only the visible part (plus shake margin) is pre-rendered.
+   */
+  private buildForeground(image: Sprite, viewport: Viewport): void {
+    const k = viewport.scale * viewport.dpr
+    const width = viewport.width + SHAKE_MARGIN * 2
+    const fullHeight = (image.height / image.width) * width
+    const visible = Math.min(fullHeight, viewport.height * FOREGROUND_MAX_HEIGHT)
+    const top = viewport.height - visible
+    // Extend below the screen by the shake margin so shaking never shows a gap.
+    const height = Math.min(fullHeight, visible + SHAKE_MARGIN)
+
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(width * k))
+    canvas.height = Math.max(1, Math.round(height * k))
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.imageSmoothingQuality = 'high'
+    // Source rows covering the top `height` world units of the scaled image.
+    const sourceHeight = image.height * (height / fullHeight)
+    ctx.drawImage(image.source, 0, 0, image.width, sourceHeight, 0, 0, canvas.width, canvas.height)
+
+    this.foregroundCache = canvas
+    this.foregroundRect = { x: -SHAKE_MARGIN, y: top, width, height }
+    this.foregroundTop = top
   }
 
   private drawSnack(snack: Snack, now: number): void {
