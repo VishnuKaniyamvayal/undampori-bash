@@ -4,7 +4,12 @@
   --accent: #f2a541;
 
   color-scheme: dark;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Luckiest Guy', 'Fredoka Variable', system-ui, sans-serif;
+  --font-body: 'Fredoka Variable', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --outline: #4a2208;
+
+  font-family: var(--font-body);
+  font-weight: 500;
   color: var(--fg);
   background: var(--bg);
 }
@@ -81,13 +86,24 @@ body {
   font-size: clamp(2rem, 7vw, 2.75rem);
   line-height: 1.1;
   color: var(--accent);
-  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 3px 0 var(--outline),
+    0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
 .heading {
   margin: 0 0 4px;
   font-size: 1.75rem;
   color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 3px 0 var(--outline),
+    0 6px 14px rgba(0, 0, 0, 0.45);
 }
 
 .subtitle,
@@ -101,6 +117,9 @@ body {
 .score-line strong {
   font-size: 1.5rem;
   color: var(--accent);
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .btn {
@@ -112,9 +131,11 @@ body {
   color: var(--fg);
   font: inherit;
   font-size: 1.05rem;
-  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, transform 0.1s;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .btn:hover {
@@ -199,16 +220,20 @@ body {
   display: flex;
   flex-direction: column;
   line-height: 1;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  text-shadow:
+    0 3px 0 var(--outline),
+    0 4px 10px rgba(0, 0, 0, 0.6);
 }
 
 .hud-score-value {
   font-size: clamp(2.25rem, 7vmin, 3.25rem);
-  font-weight: 800;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
   transform-origin: left center;
   animation: score-bump 0.18s ease-out;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .hud-best {
@@ -256,9 +281,11 @@ body {
   box-shadow: none;
   color: #ff5a4a;
   font-size: 1.4rem;
-  font-weight: 900;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
   animation: life-lost 0.3s ease-out;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 @keyframes life-lost {
@@ -278,10 +305,13 @@ body {
 
 .new-best {
   margin: 0;
-  font-weight: 800;
   color: #ffd166;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  text-shadow: 0 2px 0 var(--outline);
 }
 
 .hud-button {

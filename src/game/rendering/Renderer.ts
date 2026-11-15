@@ -4,6 +4,7 @@ import type { Particle, Piece, Snack } from '../entities/types'
 import type { TrailStroke } from '../systems/InputSystem'
 import {
   BACKGROUND_DIM,
+  DISPLAY_FONT,
   FOREGROUND_MAX_HEIGHT,
   IMAGE_SCALE,
   POPUP_LIFETIME,
@@ -217,7 +218,7 @@ export class Renderer {
       if (isUndampori) {
         ctx.rotate(-snack.rotation) // keep the warning upright
         ctx.fillStyle = look.accent
-        ctx.font = `bold ${Math.round(r)}px system-ui, sans-serif`
+        ctx.font = `${Math.round(r)}px ${DISPLAY_FONT}`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
         ctx.fillText('!', 0, 2)
@@ -305,7 +306,7 @@ export class Renderer {
     ctx.save()
     ctx.globalAlpha = Math.max(0, alpha)
     ctx.translate(popup.x, popup.y - t * 40)
-    ctx.font = `800 ${Math.round(size)}px system-ui, sans-serif`
+    ctx.font = `${Math.round(size)}px ${DISPLAY_FONT}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.lineJoin = 'round'

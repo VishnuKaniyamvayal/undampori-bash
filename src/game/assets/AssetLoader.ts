@@ -204,3 +204,16 @@ async function loadFirstExisting(
   }
   return null
 }
+
+/** Make sure the web fonts are ready before canvas text is drawn with them. */
+export async function loadFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return
+  try {
+    await Promise.all([
+      document.fonts.load('40px "Luckiest Guy"'),
+      document.fonts.load('16px "Fredoka Variable"'),
+    ])
+  } catch {
+    // Fonts unavailable: canvas falls back to system fonts.
+  }
+}

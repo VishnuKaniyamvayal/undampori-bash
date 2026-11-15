@@ -8,6 +8,9 @@ export const WORLD_SHORT_SIDE = 720
 /** Upper bound for devicePixelRatio, to keep fill-rate sane on very dense screens. */
 export const MAX_DEVICE_PIXEL_RATIO = 2
 
+/** Cartoon display font for canvas text (bundled via @fontsource; see main.tsx). */
+export const DISPLAY_FONT = '"Luckiest Guy", "Fredoka Variable", system-ui, sans-serif'
+
 /** Draw an FPS / entity counter in development builds. */
 export const SHOW_DEBUG_INFO = import.meta.env.DEV
 

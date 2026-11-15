@@ -1,4 +1,4 @@
-import { loadBackground, loadForeground, loadImages } from '../assets/AssetLoader'
+import { loadBackground, loadFonts, loadForeground, loadImages } from '../assets/AssetLoader'
 import { Renderer } from '../rendering/Renderer'
 import { AudioSystem } from '../systems/AudioSystem'
 import { startFlash, startShake, updateEffects } from '../systems/EffectsSystem'
@@ -88,7 +88,7 @@ export class Game {
     this.loop.start()
 
     // Preload art before play; missing images fall back to drawn shapes.
-    void Promise.all([loadImages(), loadBackground(), loadForeground()]).then(
+    void Promise.all([loadImages(), loadBackground(), loadForeground(), loadFonts()]).then(
       ([images, background, foreground]) => {
         if (this.destroyed) return
         this.renderer.setImages(images)
